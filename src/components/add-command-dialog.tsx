@@ -34,7 +34,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus, CalendarIcon, AlertCircle } from 'lucide-react';
+import { Plus, CalendarIcon, AlertCircle, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +54,10 @@ const formSchema = z.object({
   findingSeverity: z.enum(['low', 'medium', 'high', 'critical']).optional(),
   findingTitle: z.string().optional(),
   findingDescription: z.string().optional(),
+  impactedEntities: z.array(z.object({
+    type: z.enum(['ip', 'hostname', 'username', 'service', 'filename', 'hash', 'other']),
+    value: z.string().min(1, 'Entity value is required'),
+  })).default([]),
 }).refine((data) => {
   if (data.isMilestone) {
     return data.milestoneTitle && data.phase;
@@ -89,6 +93,7 @@ export function AddCommandDialog() {
       mitreTechniques: '',
       isMilestone: false,
       isFinding: false,
+      impactedEntities: [],
     },
   });
 
@@ -419,6 +424,87 @@ export function AddCommandDialog() {
                 </FormItem>
               )}
             />
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <FormLabel>Impacted Entities</FormLabel>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentEntities = form.getValues('impactedEntities') || [];
+                    form.setValue('impactedEntities', [
+                      ...currentEntities,
+                      { type: 'ip', value: '' },
+                    ]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Entity
+                </Button>
+              </div>
+              
+              {(form.watch('impactedEntities') || []).map((_, index) => (
+                <div key={index} className="flex gap-2 items-start">
+                  <FormField
+                    control={form.control}
+                    name={`impactedEntities.${index}.type`}
+                    render={({ field }) => (
+                      <FormItem className="flex-shrink-0 w-[120px]">
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="ip">IP</SelectItem>
+                            <SelectItem value="hostname">Hostname</SelectItem>
+                            <SelectItem value="username">Username</SelectItem>
+                            <SelectItem value="service">Service</SelectItem>
+                            <SelectItem value="filename">Filename</SelectItem>
+                            <SelectItem value="hash">Hash</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name={`impactedEntities.${index}.value`}
+                    render={({ field }) => (
+                      <FormItem className="flex-grow">
+                        <FormControl>
+                          <Input {...field} placeholder="Entity value" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      const currentEntities = form.getValues('impactedEntities');
+                      form.setValue(
+                        'impactedEntities',
+                        currentEntities.filter((_, i) => i !== index)
+                      );
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
 
             <div className="flex justify-end space-x-2">
               <Button

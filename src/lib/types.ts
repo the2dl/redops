@@ -53,7 +53,10 @@ export interface Command {
   output: string;
   status: 'success' | 'failure' | 'detected';
   mitreTechniques: string[];
-  finding?: Finding;
+  impactedEntities?: Array<{
+    type: 'ip' | 'hostname' | 'username' | 'service' | 'filename' | 'hash' | 'other';
+    value: string;
+  }>;
 }
 
 export interface Task {

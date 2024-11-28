@@ -25,7 +25,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { CalendarIcon, Pencil } from 'lucide-react';
+import { CalendarIcon, Pencil, Plus, X } from 'lucide-react';
 
 interface CommandDetailsProps {
   command: Command | null;
@@ -227,6 +227,95 @@ export function CommandDetails({ command, open, onOpenChange }: CommandDetailsPr
                       className="bg-primary/10"
                     >
                       {technique}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Impacted Entities
+              </h3>
+              {isEditing ? (
+                <div className="space-y-2">
+                  {editedCommand?.impactedEntities?.map((entity, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Select
+                        value={entity.type}
+                        onValueChange={(value: 'ip' | 'hostname' | 'username' | 'service' | 'filename' | 'hash' | 'other') => {
+                          const newEntities = [...(editedCommand?.impactedEntities || [])];
+                          newEntities[index] = { ...entity, type: value };
+                          setEditedCommand(prev => prev ? {
+                            ...prev,
+                            impactedEntities: newEntities
+                          } : null);
+                        }}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ip">IP</SelectItem>
+                          <SelectItem value="hostname">Hostname</SelectItem>
+                          <SelectItem value="username">Username</SelectItem>
+                          <SelectItem value="service">Service</SelectItem>
+                          <SelectItem value="filename">Filename</SelectItem>
+                          <SelectItem value="hash">Hash</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        value={entity.value}
+                        onChange={(e) => {
+                          const newEntities = [...(editedCommand?.impactedEntities || [])];
+                          newEntities[index] = { ...entity, value: e.target.value };
+                          setEditedCommand(prev => prev ? {
+                            ...prev,
+                            impactedEntities: newEntities
+                          } : null);
+                        }}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const newEntities = editedCommand?.impactedEntities?.filter((_, i) => i !== index) || [];
+                          setEditedCommand(prev => prev ? {
+                            ...prev,
+                            impactedEntities: newEntities
+                          } : null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newEntities = [...(editedCommand?.impactedEntities || [])];
+                      newEntities.push({ type: 'ip', value: '' });
+                      setEditedCommand(prev => prev ? {
+                        ...prev,
+                        impactedEntities: newEntities
+                      } : null);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entity
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {command.impactedEntities?.map((entity, index) => (
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className="bg-secondary"
+                    >
+                      {entity.type}: {entity.value}
                     </Badge>
                   ))}
                 </div>

@@ -11,6 +11,7 @@ import { Command } from '@/lib/types';
 import { AddCommandDialog } from './add-command-dialog';
 import { CommandDetails } from './command-details';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface CommandLogProps {
   operationId: string;
@@ -24,6 +25,10 @@ const mockCommands: Command[] = [
     output: 'Discovered 23 open ports across 5 hosts',
     status: 'success',
     mitreTechniques: ['T1046'],
+    impactedEntities: [
+      { type: 'ip', value: '192.168.1.0/24' },
+      { type: 'service', value: 'ssh' },
+    ],
   },
   {
     id: '2',
@@ -32,6 +37,10 @@ const mockCommands: Command[] = [
     output: 'Captured NTLM hash from workstation-01',
     status: 'detected',
     mitreTechniques: ['T1557.001'],
+    impactedEntities: [
+      { type: 'ip', value: '192.168.1.100' },
+      { type: 'username', value: 'admin' },
+    ],
   },
   {
     id: '3',
@@ -40,6 +49,10 @@ const mockCommands: Command[] = [
     output: 'Authentication failed',
     status: 'failure',
     mitreTechniques: ['T1110.001'],
+    impactedEntities: [
+      { type: 'ip', value: '192.168.1.100' },
+      { type: 'username', value: 'admin' },
+    ],
   },
 ];
 
@@ -50,15 +63,17 @@ const statusStyles = {
 };
 
 export function CommandLog({ operationId }: CommandLogProps) {
+  const [viewMode, setViewMode] = useState<'table' | 'spreadsheet'>('table');
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end space-x-2">
         <AddCommandDialog />
       </div>
-      <div className="rounded-lg border">
+      
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -66,6 +81,7 @@ export function CommandLog({ operationId }: CommandLogProps) {
               <TableHead>Command</TableHead>
               <TableHead>Output</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Impacted Entities</TableHead>
               <TableHead>MITRE ATT&CK</TableHead>
             </TableRow>
           </TableHeader>
@@ -95,6 +111,19 @@ export function CommandLog({ operationId }: CommandLogProps) {
                   >
                     {cmd.status}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {cmd.impactedEntities?.map((entity, index) => (
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="bg-secondary"
+                      >
+                        {entity.type}: {entity.value}
+                      </Badge>
+                    ))}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
