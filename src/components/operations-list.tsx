@@ -17,16 +17,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, Search } from 'lucide-react';
+import { 
+  Search, 
+  FileText, 
+  FileWarning, 
+  FileDigit, 
+  ChevronRight, 
+  Users, 
+  Target, 
+  BarChart3, 
+  Download 
+} from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface OperationsListProps {
   operations: Operation[];
@@ -43,16 +60,13 @@ const statusColors = {
 export function OperationsList({ operations, title }: OperationsListProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [dateFilter, setDateFilter] = useState<Date>();
 
   const filteredOperations = operations.filter((op) => {
     const matchesSearch = op.name.toLowerCase().includes(search.toLowerCase()) ||
       op.target.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || op.status === statusFilter;
-    const matchesDate = !dateFilter || 
-      format(new Date(op.startDate), 'yyyy-MM-dd') === format(dateFilter, 'yyyy-MM-dd');
     
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -83,32 +97,11 @@ export function OperationsList({ operations, title }: OperationsListProps) {
           </SelectContent>
         </Select>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-[180px] justify-start text-left font-normal"
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateFilter ? format(dateFilter, 'PPP') : 'Filter by date'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={dateFilter}
-              onSelect={setDateFilter}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-
-        {(statusFilter !== 'all' || dateFilter) && (
+        {statusFilter !== 'all' && (
           <Button
             variant="ghost"
             onClick={() => {
               setStatusFilter('all');
-              setDateFilter(undefined);
             }}
           >
             Clear filters
@@ -126,6 +119,7 @@ export function OperationsList({ operations, title }: OperationsListProps) {
               <TableHead>Start Date</TableHead>
               <TableHead>Findings</TableHead>
               <TableHead className="text-right">Success Rate</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -149,6 +143,100 @@ export function OperationsList({ operations, title }: OperationsListProps) {
                 <TableCell>{op.findings}</TableCell>
                 <TableCell className="text-right">
                   {op.successRate ? `${op.successRate}%` : '-'}
+                </TableCell>
+                <TableCell>
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent className="sm:max-w-[500px]">
+                      <SheetHeader>
+                        <SheetTitle className="text-xl">{op.name}</SheetTitle>
+                      </SheetHeader>
+                      
+                      <div className="mt-6 space-y-6">
+                        {/* Overview Section */}
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold">Overview</h3>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="flex items-center space-x-2">
+                              <Target className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm font-medium">Target</p>
+                                <p className="text-sm text-muted-foreground">{op.target}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm font-medium">Success Rate</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {op.successRate ? `${op.successRate}%` : '-'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm font-medium">Entities</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {op.entities?.length || 0} identified
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Findings Section */}
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold">Findings</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {op.findings || 'No findings recorded'}
+                          </p>
+                        </div>
+
+                        {/* Entities Section */}
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold">Identified Entities</h3>
+                          <div className="space-y-2">
+                            {op.entities?.map((entity, index) => (
+                              <div key={index} className="flex items-center space-x-2 text-sm">
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                                <span>{entity}</span>
+                              </div>
+                            )) || (
+                              <p className="text-sm text-muted-foreground">No entities identified</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Reports Section */}
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold">Generate Report</h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <Button variant="outline" className="justify-start">
+                              <FileText className="mr-2 h-4 w-4" />
+                              Technical Report
+                            </Button>
+                            <Button variant="outline" className="justify-start">
+                              <FileWarning className="mr-2 h-4 w-4" />
+                              Executive Summary
+                            </Button>
+                            <Button variant="outline" className="justify-start">
+                              <FileDigit className="mr-2 h-4 w-4" />
+                              Statistics Report
+                            </Button>
+                            <Button variant="outline" className="justify-start">
+                              <Download className="mr-2 h-4 w-4" />
+                              Export All Data
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
                 </TableCell>
               </TableRow>
             ))}

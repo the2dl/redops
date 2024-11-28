@@ -11,7 +11,6 @@ import { Command } from '@/lib/types';
 import { AddCommandDialog } from './add-command-dialog';
 import { CommandDetails } from './command-details';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 
 interface CommandLogProps {
   operationId: string;
@@ -63,7 +62,6 @@ const statusStyles = {
 };
 
 export function CommandLog({ operationId }: CommandLogProps) {
-  const [viewMode, setViewMode] = useState<'table' | 'spreadsheet'>('table');
   const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 

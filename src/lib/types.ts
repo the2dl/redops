@@ -15,6 +15,7 @@ export interface Operation {
   criticalFindings?: number;
   techniques?: number;
   progress?: number;
+  team?: TeamMember[];
 }
 
 export interface DashboardStats {
@@ -79,4 +80,11 @@ export interface Plan {
   objective: string;
   scope: string[];
   phases: Phase[];
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  avatar?: string;
+  role?: string;
 }
