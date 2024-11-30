@@ -1,10 +1,10 @@
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Activity,
   AlertCircle,
   CheckCircle2,
   Flag,
-  Plus,
-  Sparkles,
+  LogOut,
 } from 'lucide-react';
 import { StatsCard } from '@/components/stats-card';
 import { OperationsList } from '@/components/operations-list';
@@ -13,16 +13,36 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { CreateOperationForm } from '@/components/create-operation-form';
 import { CreateAIOperationForm } from '@/components/create-ai-operation-form';
+import { useNavigate } from 'react-router-dom';
 
 export function Dashboard() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Red Team Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Red Team Dashboard</h1>
+          <p className="text-muted-foreground">Welcome back, {user?.username}</p>
+        </div>
         <div className="flex items-center space-x-2">
           <ThemeToggle />
           <CreateOperationForm />
           <CreateAIOperationForm />
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={handleLogout}
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

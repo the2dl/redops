@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: redopz
+      POSTGRES_PASSWORD: funrun11
+      POSTGRES_DB: redops_db
+    ports:
+      - "5431:5432"
+    volumes:
+      - redops-17-data:/var/lib/postgresql/data
+
+volumes:
+  redops-17-data:

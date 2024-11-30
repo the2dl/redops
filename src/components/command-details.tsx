@@ -25,7 +25,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { CalendarIcon, Pencil, Plus, X } from 'lucide-react';
+import { CalendarIcon, Pencil, Plus, X, Sparkles } from 'lucide-react';
 
 interface CommandDetailsProps {
   command: Command | null;
@@ -150,14 +150,34 @@ export function CommandDetails({ command, open, onOpenChange }: CommandDetailsPr
             <div className="space-y-2">
               <h3 className="text-sm font-medium text-muted-foreground">Output</h3>
               {isEditing ? (
-                <Textarea
-                  value={editedCommand?.output}
-                  onChange={(e) => setEditedCommand(prev => prev ? {
-                    ...prev,
-                    output: e.target.value
-                  } : null)}
-                  className="min-h-[100px]"
-                />
+                <div className="space-y-2">
+                  <Textarea
+                    value={editedCommand?.output}
+                    onChange={(e) => setEditedCommand(prev => prev ? {
+                      ...prev,
+                      output: e.target.value
+                    } : null)}
+                    className="min-h-[100px]"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      if (editedCommand?.command) {
+                        // TODO: Replace with actual AI generation
+                        const mockDescription = "This command performs a comprehensive port scan of the target network (192.168.1.0/24) using SYN packets (-sS). It will identify all open ports (-p-) and potential services running on the hosts. This type of scan is commonly used during the reconnaissance phase to map out the network topology and identify potential targets.";
+                        setEditedCommand(prev => prev ? {
+                          ...prev,
+                          output: mockDescription
+                        } : null);
+                      }
+                    }}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Description
+                  </Button>
+                </div>
               ) : (
                 <pre className="p-3 bg-muted rounded-md text-sm font-mono whitespace-pre-wrap">
                   {command.output}

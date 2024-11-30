@@ -34,7 +34,7 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus, CalendarIcon, X } from 'lucide-react';
+import { Plus, CalendarIcon, X, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -352,6 +352,23 @@ export function AddCommandDialog() {
                 </FormItem>
               )}
             />
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                const command = form.getValues('command');
+                if (command) {
+                  // TODO: Replace with actual AI generation
+                  const mockDescription = "This command performs a comprehensive port scan of the target network (192.168.1.0/24) using SYN packets (-sS). It will identify all open ports (-p-) and potential services running on the hosts.";
+                  form.setValue('output', mockDescription);
+                }
+              }}
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Generate Description
+            </Button>
 
             <FormField
               control={form.control}

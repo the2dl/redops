@@ -11,6 +11,8 @@ import { Command } from '@/lib/types';
 import { AddCommandDialog } from './add-command-dialog';
 import { CommandDetails } from './command-details';
 import { useState } from 'react';
+import { Plus, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface CommandLogProps {
   operationId: string;
