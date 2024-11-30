@@ -28,21 +28,33 @@ function App() {
   const [setupRequired, setSetupRequired] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
-    authApi.checkSetup()
-      .then(data => {
-        setSetupRequired(data.setupRequired);
-      })
-      .catch((err) => {
-        console.error('Failed to check setup status:', err);
-        setError(err instanceof ApiError ? err.message : 'Failed to connect to server');
-        setSetupRequired(true);
-      });
-  }, []);
+    const checkSetup = async () => {
+      try {
+        if (isAuthenticated) {
+          setSetupRequired(false);
+          return;
+        }
 
-  // Show loading state while checking setup status
-  if (setupRequired === null) {
+        if (location.pathname === '/setup') {
+          return;
+        }
+
+        const response = await fetch('/api/auth/setup-required');
+        const data = await response.json();
+        setSetupRequired(data.setupRequired);
+      } catch (err) {
+        console.error('Failed to check setup status:', err);
+        setError(err instanceof Error ? err.message : 'Failed to connect to server');
+      }
+    };
+
+    checkSetup();
+  }, [location.pathname, isAuthenticated]);
+
+  if (setupRequired === null && !isAuthenticated && location.pathname !== '/setup') {
     return <div>Loading...</div>;
   }
 
@@ -50,69 +62,58 @@ function App() {
     <ThemeProvider defaultTheme="system" storageKey="red-team-theme">
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
         <Routes>
-          {/* Public routes */}
           <Route 
-            path="/login" 
+            path="/setup" 
             element={
-              isAuthenticated ? 
-                <Navigate to="/dashboard" replace /> : 
-                <Login />
-            } 
-          />
-          <Route 
-            path="/register" 
-            element={
-              isAuthenticated ? 
-                <Navigate to="/dashboard" replace /> : 
-                <Register />
-            } 
-          />
-          
-          {/* Setup wizard route */}
-          {setupRequired && (
-            <Route path="/setup" element={<SetupWizard />} />
-          )}
-
-          {/* Protected routes */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/operations/:id" 
-            element={
-              <ProtectedRoute>
-                <OperationDetails />
-              </ProtectedRoute>
+              isAuthenticated ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <SetupWizard />
+              )
             } 
           />
 
-          {/* Root redirect */}
+          <Route path="/login" element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Login />
+            )
+          } />
+          <Route path="/register" element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Register />
+            )
+          } />
+
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+
           <Route 
             path="/" 
             element={
-              setupRequired ? (
-                <Navigate to="/setup" replace />
-              ) : isAuthenticated ? (
+              isAuthenticated ? (
                 <Navigate to="/dashboard" replace />
+              ) : setupRequired ? (
+                <Navigate to="/setup" replace />
               ) : (
                 <Navigate to="/login" replace />
               )
             } 
           />
 
-          {/* Catch all route */}
           <Route 
             path="*" 
             element={
-              setupRequired ? (
-                <Navigate to="/setup" replace />
-              ) : isAuthenticated ? (
+              isAuthenticated ? (
                 <Navigate to="/dashboard" replace />
+              ) : setupRequired ? (
+                <Navigate to="/setup" replace />
               ) : (
                 <Navigate to="/login" replace />
               )

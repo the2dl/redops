@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authApi } from '@/api';
 
 interface User {
@@ -23,7 +24,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       return savedUser ? JSON.parse(savedUser) : null;
     } catch {
-      // If JSON parsing fails, clear the invalid data
       localStorage.removeItem('user');
       return null;
     }
@@ -33,31 +33,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return localStorage.getItem('token');
   });
 
-  // Compute isAuthenticated based on user and token
+  const [loading, setLoading] = useState(true);
   const isAuthenticated = Boolean(user && token);
 
-  // Add this effect to handle token/user synchronization
   useEffect(() => {
     if (!token) {
       setUser(null);
       localStorage.removeItem('user');
     }
   }, [token]);
-
-  useEffect(() => {
-    // Check if setup is required
-    const checkSetup = async () => {
-      try {
-        const { setupRequired } = await authApi.checkSetup();
-        if (setupRequired) {
-          window.location.href = '/setup';
-        }
-      } catch (error) {
-        console.error('Failed to check setup status:', error);
-      }
-    };
-    checkSetup();
-  }, []);
 
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);
@@ -80,6 +64,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
   };
+
+  useEffect(() => {
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return null;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -19,9 +19,13 @@ router.post('/setup', async (req, res) => {
   const { username, email, password } = req.body;
   
   try {
-    // Check if setup has already been completed
-    const setupCheck = await pool.query('SELECT is_initialized FROM setup_status LIMIT 1');
+    // Start a transaction
+    await pool.query('BEGIN');
+
+    // Check if setup has already been completed - INSIDE transaction
+    const setupCheck = await pool.query('SELECT is_initialized FROM setup_status LIMIT 1 FOR UPDATE');
     if (setupCheck.rows[0].is_initialized) {
+      await pool.query('ROLLBACK');
       return res.status(400).json({ error: 'Setup already completed' });
     }
 
@@ -29,7 +33,7 @@ router.post('/setup', async (req, res) => {
     
     // Create admin user
     const userResult = await pool.query(
-      'INSERT INTO users (username, email, password_hash, is_admin) VALUES ($1, $2, $3, true) RETURNING id',
+      'INSERT INTO users (username, email, password_hash, is_admin) VALUES ($1, $2, $3, true) RETURNING id, username, email, is_admin',
       [username, email, hashedPassword]
     );
 
@@ -39,8 +43,40 @@ router.post('/setup', async (req, res) => {
       [userResult.rows[0].id]
     );
 
-    res.json({ message: 'Setup completed successfully' });
+    // Commit transaction
+    await pool.query('COMMIT');
+
+    const user = userResult.rows[0];
+    
+    // Generate token with additional security measures
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        username: user.username,
+        // Add additional claims for security
+        isAdmin: user.is_admin,
+        tokenVersion: 1, // Add version control
+        tokenType: 'auth'
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { 
+        expiresIn: '24h',
+        audience: 'redops-api', // Add audience
+        issuer: 'redops-auth' // Add issuer
+      }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        isAdmin: user.is_admin
+      }
+    });
   } catch (error) {
+    await pool.query('ROLLBACK');
+    console.error('Setup error:', error);
     res.status(500).json({ error: 'Setup failed' });
   }
 });
@@ -50,20 +86,47 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    // Get user with minimal required fields
+    const result = await pool.query(
+      'SELECT id, username, password_hash, is_admin, is_active FROM users WHERE username = $1',
+      [username]
+    );
     const user = result.rows[0];
 
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    if (!user.is_active) {
+      return res.status(403).json({ error: 'Account is inactive' });
+    }
+
+    // Update last_login
+    await pool.query(
+      'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
+      [user.id]
+    );
+
     const token = jwt.sign(
-      { id: user.id, username: user.username, isAdmin: user.is_admin },
+      { 
+        id: user.id, 
+        username: user.username,
+        tokenVersion: user.token_version,
+        tokenType: 'auth'
+      },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '24h' }
     );
 
-    res.json({ token, user: { id: user.id, username: user.username, isAdmin: user.is_admin } });
+    // Note: is_admin is sent in response but not stored in JWT
+    res.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        username: user.username, 
+        isAdmin: user.is_admin 
+      } 
+    });
   } catch (error) {
     res.status(500).json({ error: 'Login failed' });
   }
@@ -115,6 +178,43 @@ router.post('/register', async (req, res) => {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed' });
   }
+});
+
+// Add middleware to verify admin status
+const verifyAdmin = async (req, res, next) => {
+  try {
+    // Verify JWT token
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Verify token with all claims
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', {
+      audience: 'redops-api',
+      issuer: 'redops-auth'
+    });
+
+    // Double check against database
+    const userResult = await pool.query(
+      'SELECT is_admin FROM users WHERE id = $1',
+      [decoded.id]
+    );
+
+    if (!userResult.rows[0] || !userResult.rows[0].is_admin) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+// Use the middleware for admin-only routes
+router.get('/admin/something', verifyAdmin, (req, res) => {
+  // Admin-only endpoint
 });
 
 module.exports = router; 
