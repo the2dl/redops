@@ -16,6 +16,9 @@ export interface Operation {
   techniques?: number;
   progress?: number;
   team?: TeamMember[];
+  criticalFindings: CriticalFinding[];
+  detections: Detection[];
+  techniques: MitreTechnique[];
 }
 
 export interface DashboardStats {
@@ -87,4 +90,25 @@ export interface TeamMember {
   name: string;
   avatar?: string;
   role?: string;
+}
+
+interface CriticalFinding {
+  title: string;
+  description: string;
+  severity: string;
+  timestamp: string;
+}
+
+interface Detection {
+  name: string;
+  details: string;
+  type: string;
+  timestamp: string;
+}
+
+interface MitreTechnique {
+  id: string;
+  name: string;
+  description: string;
+  tactic: string;
 }

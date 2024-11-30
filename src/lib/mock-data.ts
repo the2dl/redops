@@ -10,16 +10,69 @@ import {
 export const operations: Operation[] = [
   {
     id: '1',
-    name: 'Operation Nighthawk',
+    name: 'Operation Alpha',
     status: 'ongoing',
-    startDate: '2024-03-15',
-    target: 'Internal Network Infrastructure',
-    findings: 12,
+    target: 'Example Target 1',
+    startDate: '2024-01-01',
+    endDate: null,
+    progress: 65,
     successRate: 78,
-    detections: 3,
-    criticalFindings: 2,
-    techniques: 15,
-    progress: 65
+    criticalFindings: [
+      {
+        title: 'Unauthorized Access Detected',
+        description: 'Found evidence of unauthorized access attempts on the main server.',
+        severity: 'High',
+        timestamp: '2024-01-15T10:30:00Z'
+      },
+      {
+        title: 'Data Exfiltration Attempt',
+        description: 'Detected potential data exfiltration through port 443.',
+        severity: 'Critical',
+        timestamp: '2024-01-16T15:45:00Z'
+      }
+    ],
+    detections: [
+      {
+        name: 'Suspicious Process Creation',
+        details: 'Unusual process spawned from system32 directory',
+        type: 'Process',
+        timestamp: '2024-01-15T08:20:00Z'
+      },
+      {
+        name: 'Network Anomaly',
+        details: 'Unexpected outbound connection to unknown IP',
+        type: 'Network',
+        timestamp: '2024-01-15T09:15:00Z'
+      }
+    ],
+    techniques: [
+      {
+        id: 'T1595',
+        name: 'Active Scanning',
+        description: 'Adversaries may execute active reconnaissance scans to gather information.',
+        tactic: 'Reconnaissance'
+      },
+      {
+        id: 'T1190',
+        name: 'Exploit Public-Facing Application',
+        description: 'Adversaries may attempt to take advantage of vulnerabilities in public-facing applications.',
+        tactic: 'Initial Access'
+      }
+    ],
+    team: [
+      {
+        id: 'op1',
+        name: 'John Doe',
+        role: 'Lead Operator',
+        avatar: '/avatars/john-doe.png'
+      },
+      {
+        id: 'op2',
+        name: 'Jane Smith',
+        role: 'Security Analyst',
+        avatar: '/avatars/jane-smith.png'
+      }
+    ]
   },
   {
     id: '2',

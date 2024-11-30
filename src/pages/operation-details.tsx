@@ -28,6 +28,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { DialogClose } from "@/components/ui/dialog";
 import { useState } from 'react';
+import { OperationMitreMapping } from '@/components/operation-mitre-mapping';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const statusColors = {
   ongoing: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
@@ -233,26 +243,199 @@ export function OperationDetails() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Critical Findings"
-          value={operation.criticalFindings || 0}
-          icon={<AlertCircle className="h-4 w-4 text-red-500" />}
-        />
-        <StatsCard
-          title="Detections"
-          value={operation.detections || 0}
-          icon={<Eye className="h-4 w-4 text-yellow-500" />}
-        />
-        <StatsCard
-          title="MITRE Techniques"
-          value={operation.techniques || 0}
-          icon={<Target className="h-4 w-4 text-blue-500" />}
-        />
-        <StatsCard
-          title="Success Rate"
-          value={`${operation.successRate || 0}%`}
-          icon={<Waypoints className="h-4 w-4 text-green-500" />}
-        />
+        <Sheet>
+          <SheetTrigger asChild>
+            <div className="cursor-pointer">
+              <StatsCard
+                title="Critical Findings"
+                value={operation.criticalFindings?.length || 0}
+                icon={<AlertCircle className="h-4 w-4 text-red-500" />}
+              />
+            </div>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+            <SheetHeader>
+              <SheetTitle>Critical Findings</SheetTitle>
+              <SheetDescription>
+                List of all critical findings in this operation
+              </SheetDescription>
+            </SheetHeader>
+            <ScrollArea className="h-[calc(100vh-8rem)] mt-4">
+              <div className="space-y-4">
+                {operation.criticalFindings?.map((finding, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1">
+                          <AlertCircle className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="font-medium">{finding.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {finding.description}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{new Date(finding.timestamp).toLocaleString()}</span>
+                            <span>•</span>
+                            <Badge variant="outline">{finding.severity}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {!operation.criticalFindings?.length && (
+                  <p className="text-center text-muted-foreground">
+                    No critical findings recorded
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+
+        <Sheet>
+          <SheetTrigger asChild>
+            <div className="cursor-pointer">
+              <StatsCard
+                title="Detections"
+                value={operation.detections?.length || 0}
+                icon={<Eye className="h-4 w-4 text-yellow-500" />}
+              />
+            </div>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+            <SheetHeader>
+              <SheetTitle>Detections</SheetTitle>
+              <SheetDescription>
+                List of all detections in this operation
+              </SheetDescription>
+            </SheetHeader>
+            <ScrollArea className="h-[calc(100vh-8rem)] mt-4">
+              <div className="space-y-4">
+                {operation.detections?.map((detection, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1">
+                          <Eye className="h-5 w-5 text-yellow-500" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="font-medium">{detection.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {detection.details}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{new Date(detection.timestamp).toLocaleString()}</span>
+                            <span>•</span>
+                            <Badge variant="outline">{detection.type}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {!operation.detections?.length && (
+                  <p className="text-center text-muted-foreground">
+                    No detections recorded
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+
+        <Sheet>
+          <SheetTrigger asChild>
+            <div className="cursor-pointer">
+              <StatsCard
+                title="MITRE Techniques"
+                value={operation.techniques?.length || 0}
+                icon={<Target className="h-4 w-4 text-blue-500" />}
+              />
+            </div>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+            <SheetHeader>
+              <SheetTitle>MITRE Techniques</SheetTitle>
+              <SheetDescription>
+                List of all MITRE ATT&CK techniques used in this operation
+              </SheetDescription>
+            </SheetHeader>
+            <ScrollArea className="h-[calc(100vh-8rem)] mt-4">
+              <div className="space-y-4">
+                {operation.techniques?.map((technique, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1">
+                          <Target className="h-5 w-5 text-blue-500" />
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{technique.name}</p>
+                            <Badge variant="outline" className="font-mono">
+                              {technique.id}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {technique.description}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline">{technique.tactic}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {!operation.techniques?.length && (
+                  <p className="text-center text-muted-foreground">
+                    No MITRE techniques recorded
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+
+        <Sheet>
+          <SheetTrigger asChild>
+            <div className="cursor-pointer">
+              <StatsCard
+                title="Success Rate"
+                value={`${operation.successRate || 0}%`}
+                icon={<Waypoints className="h-4 w-4 text-green-500" />}
+              />
+            </div>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+            <SheetHeader>
+              <SheetTitle>Success Metrics</SheetTitle>
+              <SheetDescription>
+                Detailed breakdown of operation success metrics
+              </SheetDescription>
+            </SheetHeader>
+            <ScrollArea className="h-[calc(100vh-8rem)] mt-4">
+              <div className="space-y-4">
+                {/* Add your success metrics details here */}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Overall Success Rate</h4>
+                        <div className="text-3xl font-bold text-green-500">
+                          {operation.successRate || 0}%
+                        </div>
+                      </div>
+                      {/* Add more success metrics as needed */}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
       </div>
 
       <Card>
@@ -282,6 +465,7 @@ export function OperationDetails() {
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
           <TabsTrigger value="commands">Command Log</TabsTrigger>
           <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="mitre">MITRE Mapping</TabsTrigger>
         </TabsList>
         <TabsContent value="plan" className="space-y-4">
           <OperationPlan operationId={operation.id} />
@@ -294,6 +478,9 @@ export function OperationDetails() {
         </TabsContent>
         <TabsContent value="summary" className="space-y-4">
           <OperationSummary operationId={operation.id} />
+        </TabsContent>
+        <TabsContent value="mitre" className="space-y-4">
+          <OperationMitreMapping operationId={operation.id} />
         </TabsContent>
       </Tabs>
     </div>
