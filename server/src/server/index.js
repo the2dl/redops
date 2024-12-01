@@ -1,5 +1,6 @@
 const express = require('express');
 const passport = require('passport');
+const session = require('express-session');
 const cors = require('cors');
 const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
 const path = require('path');
@@ -19,7 +20,14 @@ if (!process.env.JWT_SECRET) {
 
 // Debug middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  if (req.session) {
+    console.log('Session:', {
+      id: req.session.id,
+      isAuthenticated: req.isAuthenticated?.(),
+      user: req.user?.id
+    });
+  }
   next();
 });
 
@@ -29,7 +37,36 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Add session and passport middleware BEFORE your routes
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport and restore authentication state from session
 app.use(passport.initialize());
+app.use(passport.session());
+
+// Passport serialization
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    done(null, result.rows[0]);
+  } catch (error) {
+    done(error);
+  }
+});
 
 // JWT Strategy Configuration
 const jwtOptions = {

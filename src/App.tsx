@@ -8,6 +8,7 @@ import SetupWizard from './components/auth/SetupWizard';
 import { useAuth } from './contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { authApi, ApiError } from '@/api';
+import { AuthCallback } from './components/auth/AuthCallback';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -119,6 +120,8 @@ function App() {
               )
             } 
           />
+
+          <Route path="/auth-callback" element={<AuthCallback />} />
         </Routes>
       </div>
     </ThemeProvider>

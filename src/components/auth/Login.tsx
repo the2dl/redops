@@ -19,6 +19,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
+  const [azureEnabled, setAzureEnabled] = useState(false);
 
   useEffect(() => {
     console.log('Authentication state:', isAuthenticated);
@@ -27,6 +28,19 @@ const Login: React.FC = () => {
       console.log('Redirecting to:', from);
       navigate(from, { replace: true });
     }
+
+    // Check if Azure AD is enabled
+    const checkAzureStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/azure-status');
+        const data = await response.json();
+        setAzureEnabled(data.isEnabled);
+      } catch (error) {
+        console.error('Failed to check Azure status:', error);
+      }
+    };
+
+    checkAzureStatus();
   }, [isAuthenticated, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -68,6 +82,14 @@ const Login: React.FC = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleAzureLogin = async () => {
+    try {
+      await authApi.loginWithAzure();
+    } catch (error) {
+      setError('Azure AD login failed');
+    }
   };
 
   return (
@@ -120,6 +142,36 @@ const Login: React.FC = () => {
                 Sign In
               </Button>
             </form>
+
+            {azureEnabled && (
+              <>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleAzureLogin}
+                >
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7V17L12 22L22 17V7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 22V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M22 7L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 7L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Sign in with Azure AD
+                </Button>
+              </>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-sm text-muted-foreground text-center">

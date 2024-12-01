@@ -53,5 +53,19 @@ export const authApi = {
 
   async logout(): Promise<void> {
     localStorage.removeItem('token');
+  },
+
+  async loginWithAzure(): Promise<void> {
+    window.location.href = '/api/auth/azure';
+  },
+
+  async handleAuthCallback(token: string): Promise<AuthResponse> {
+    localStorage.setItem('token', token);
+    const user = await this.getCurrentUser();
+    return { token, user };
+  },
+
+  async getCurrentUser(): Promise<User> {
+    return apiRequest<User>('/auth/me');
   }
 }; 
