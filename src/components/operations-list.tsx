@@ -1,4 +1,6 @@
 import { Operation } from '@/lib/types';
+import { operationsApi } from '@/api';
+import { useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -29,7 +31,6 @@ import {
   BarChart3, 
   Download 
 } from 'lucide-react';
-import { useState } from 'react';
 import { format } from 'date-fns';
 import {
   Tooltip,
@@ -46,7 +47,6 @@ import {
 } from "@/components/ui/sheet";
 
 interface OperationsListProps {
-  operations: Operation[];
   title: string;
 }
 
@@ -57,9 +57,30 @@ const statusColors = {
   cancelled: 'bg-red-500/15 text-red-700 dark:text-red-300',
 };
 
-export function OperationsList({ operations, title }: OperationsListProps) {
+export function OperationsList({ title }: OperationsListProps) {
+  const [operations, setOperations] = useState<Operation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  useEffect(() => {
+    const fetchOperations = async () => {
+      try {
+        setLoading(true);
+        const data = await operationsApi.getAll();
+        setOperations(data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch operations');
+        console.error('Error fetching operations:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOperations();
+  }, []);
 
   const filteredOperations = operations.filter((op) => {
     const matchesSearch = op.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -68,6 +89,14 @@ export function OperationsList({ operations, title }: OperationsListProps) {
     
     return matchesSearch && matchesStatus;
   });
+
+  if (loading) {
+    return <div>Loading operations...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
 
   return (
     <div className="space-y-4">

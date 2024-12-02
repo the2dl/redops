@@ -29,19 +29,37 @@ async function testConnection() {
   }
 }
 
-async function initializeDatabase() {
+const initializeDatabase = async () => {
   try {
-    console.log('Testing database connection...');
-    await testConnection();
-    
-    console.log('Initializing database...');
-    const sqlFile = await fs.readFile(path.join(__dirname, 'init.sql'), 'utf8');
-    await pool.query(sqlFile);
-    console.log('Database initialized successfully');
+    // Drop existing trigger if it exists
+    await pool.query(`
+      DROP TRIGGER IF EXISTS update_operations_updated_at ON operations;
+    `);
+
+    // Create the trigger function if it doesn't exist
+    await pool.query(`
+      CREATE OR REPLACE FUNCTION update_updated_at()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+      END;
+      $$ language 'plpgsql';
+    `);
+
+    // Create the trigger
+    await pool.query(`
+      CREATE TRIGGER update_operations_updated_at
+        BEFORE UPDATE ON operations
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at();
+    `);
+
+    console.log('Database initialization completed');
   } catch (error) {
     console.error('Error initializing database:', error);
     throw error;
   }
-}
+};
 
 module.exports = { pool, initializeDatabase }; 

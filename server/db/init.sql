@@ -110,3 +110,169 @@ BEGIN
         );
     END IF;
 END $$;
+
+-- Operations table for basic operation information
+CREATE TABLE IF NOT EXISTS operations (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL CHECK (status IN ('planned', 'ongoing', 'completed', 'cancelled')),
+    target VARCHAR(255) NOT NULL,
+    start_date DATE,
+    end_date DATE,
+    progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
+    success_rate INTEGER CHECK (success_rate >= 0 AND success_rate <= 100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Critical findings table
+CREATE TABLE IF NOT EXISTS critical_findings (
+    id SERIAL PRIMARY KEY,
+    operation_id INTEGER REFERENCES operations(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    severity VARCHAR(50) CHECK (severity IN ('Low', 'Medium', 'High', 'Critical')),
+    timestamp TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Detections table
+CREATE TABLE IF NOT EXISTS detections (
+    id SERIAL PRIMARY KEY,
+    operation_id INTEGER REFERENCES operations(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    details TEXT,
+    type VARCHAR(50),
+    timestamp TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- MITRE ATT&CK Techniques table
+CREATE TABLE IF NOT EXISTS techniques (
+    id VARCHAR(10) PRIMARY KEY,  -- e.g., 'T1595'
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    tactic VARCHAR(100)
+);
+
+-- Junction table for operations and techniques
+CREATE TABLE IF NOT EXISTS operation_techniques (
+    operation_id INTEGER REFERENCES operations(id) ON DELETE CASCADE,
+    technique_id VARCHAR(10) REFERENCES techniques(id) ON DELETE CASCADE,
+    PRIMARY KEY (operation_id, technique_id)
+);
+
+-- Team members table
+CREATE TABLE IF NOT EXISTS team_members (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(100),
+    avatar VARCHAR(255)
+);
+
+-- Junction table for operations and team members
+CREATE TABLE IF NOT EXISTS operation_team_members (
+    operation_id INTEGER REFERENCES operations(id) ON DELETE CASCADE,
+    team_member_id INTEGER REFERENCES team_members(id) ON DELETE CASCADE,
+    PRIMARY KEY (operation_id, team_member_id)
+);
+
+-- Operation plans table
+CREATE TABLE IF NOT EXISTS operation_plans (
+    id SERIAL PRIMARY KEY,
+    operation_id INTEGER REFERENCES operations(id) ON DELETE CASCADE,
+    objective TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Plan scope items table
+CREATE TABLE IF NOT EXISTS plan_scope_items (
+    id SERIAL PRIMARY KEY,
+    plan_id INTEGER REFERENCES operation_plans(id) ON DELETE CASCADE,
+    scope_item TEXT NOT NULL
+);
+
+-- Plan phases table
+CREATE TABLE IF NOT EXISTS plan_phases (
+    id SERIAL PRIMARY KEY,
+    plan_id INTEGER REFERENCES operation_plans(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    icon VARCHAR(50),
+    sequence_order INTEGER NOT NULL
+);
+
+-- Phase tasks table
+CREATE TABLE IF NOT EXISTS phase_tasks (
+    id SERIAL PRIMARY KEY,
+    phase_id INTEGER REFERENCES plan_phases(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) CHECK (status IN ('planned', 'in-progress', 'completed')),
+    command TEXT
+);
+
+-- Junction table for tasks and techniques
+CREATE TABLE IF NOT EXISTS task_techniques (
+    task_id INTEGER REFERENCES phase_tasks(id) ON DELETE CASCADE,
+    technique_id VARCHAR(10) REFERENCES techniques(id) ON DELETE CASCADE,
+    PRIMARY KEY (task_id, technique_id)
+);
+
+-- Add triggers for updated_at columns
+CREATE TRIGGER update_operations_updated_at
+    BEFORE UPDATE ON operations
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_operation_plans_updated_at
+    BEFORE UPDATE ON operation_plans
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Create indexes for common queries
+CREATE INDEX idx_operations_status ON operations(status);
+CREATE INDEX idx_critical_findings_operation_id ON critical_findings(operation_id);
+CREATE INDEX idx_detections_operation_id ON detections(operation_id);
+CREATE INDEX idx_operation_techniques_operation_id ON operation_techniques(operation_id);
+
+-- Commands table
+CREATE TABLE IF NOT EXISTS commands (
+    id SERIAL PRIMARY KEY,
+    operation_id INTEGER REFERENCES operations(id) ON DELETE CASCADE,
+    command TEXT NOT NULL,
+    output TEXT,
+    status VARCHAR(50) CHECK (status IN ('success', 'failure', 'detected')),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Impacted entities table
+CREATE TABLE IF NOT EXISTS impacted_entities (
+    id SERIAL PRIMARY KEY,
+    command_id INTEGER REFERENCES commands(id) ON DELETE CASCADE,
+    entity_type VARCHAR(50) NOT NULL,
+    value TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Command techniques junction table
+CREATE TABLE IF NOT EXISTS command_techniques (
+    command_id INTEGER REFERENCES commands(id) ON DELETE CASCADE,
+    technique_id VARCHAR(10) REFERENCES techniques(id) ON DELETE CASCADE,
+    PRIMARY KEY (command_id, technique_id)
+);
+
+-- Add indexes for better query performance
+CREATE INDEX idx_commands_operation_id ON commands(operation_id);
+CREATE INDEX idx_impacted_entities_command_id ON impacted_entities(command_id);
+CREATE INDEX idx_command_techniques_command_id ON command_techniques(command_id);
+
+-- Add trigger for commands updated_at
+CREATE TRIGGER update_commands_updated_at
+    BEFORE UPDATE ON commands
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

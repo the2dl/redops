@@ -3,22 +3,24 @@ import { LucideIcon } from 'lucide-react';
 export type OperationStatus = 'ongoing' | 'completed' | 'planned' | 'cancelled';
 
 export interface Operation {
-  id: string;
+  id: number;
   name: string;
-  status: OperationStatus;
+  target: string;
+  status: 'ongoing' | 'completed' | 'planned' | 'cancelled';
   startDate: string;
   endDate?: string;
-  target: string;
   successRate?: number;
-  findings: number;
-  detections?: number;
-  criticalFindings?: number;
-  techniques?: number;
-  progress?: number;
-  team?: TeamMember[];
-  criticalFindings: CriticalFinding[];
-  detections: Detection[];
-  techniques: MitreTechnique[];
+  findings?: string;
+  entities?: string[];
+  criticalFindings?: any[];
+  detections?: any[];
+  techniques?: any[];
+  team?: any[];
+  critical_findings_count?: number;
+  detections_count?: number;
+  techniques_count?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DashboardStats {

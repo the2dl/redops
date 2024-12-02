@@ -7,6 +7,8 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const authRoutes = require('../../routes/auth');
+const operationsRoutes = require('../../routes/operations');
+const commandsRoutes = require('../../routes/commands');
 const { pool, initializeDatabase } = require('../../db/config');
 
 const app = express();
@@ -88,8 +90,18 @@ passport.use(new JwtStrategy(jwtOptions, async (jwt_payload, done) => {
   }
 }));
 
+// Add this after your other middleware configurations
+const checkAdmin = async (req, res, next) => {
+  if (!req.user?.is_admin) {
+    return res.status(403).json({ error: 'Not authorized' });
+  }
+  next();
+};
+
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/operations', passport.authenticate('jwt', { session: false }), checkAdmin, operationsRoutes);
+app.use('/api/commands', passport.authenticate('jwt', { session: false }), checkAdmin, commandsRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
