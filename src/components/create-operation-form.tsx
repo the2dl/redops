@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { v4 as uuidv4 } from 'uuid';
 import {
   Dialog,
   DialogContent,
@@ -11,30 +10,48 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Plus, X } from 'lucide-react';
-import { Plan } from '@/lib/types';
-import { mockPlan } from '@/lib/mock-data';
+import { Plus } from 'lucide-react';
+import { operationsApi } from '@/api';
+import { useToast } from '@/hooks/use-toast';
 
 export function CreateOperationForm() {
   const [isOpen, setIsOpen] = useState(false);
-  const [objective, setObjective] = useState('');
-  const [scope, setScope] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    target: '',
+    status: 'planned' as const,
+    startDate: new Date().toISOString().split('T')[0]
+  });
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = () => {
-    const newOperationId = uuidv4();
-    const newPlan: Plan = {
-      ...mockPlan,
-      id: newOperationId,
-      objective,
-      scope,
-    };
-    // In a real app, you would save newPlan to your backend here
-    console.log('Creating new operation:', newPlan);
-    setIsOpen(false);
-    navigate(`/operations/${newOperationId}`);
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      const operation = await operationsApi.create({
+        ...formData,
+        team: [],        // Optional: Add team members later
+        techniques: []   // Optional: Add techniques later
+      });
+      
+      toast({
+        title: "Success",
+        description: "Operation created successfully",
+      });
+      setIsOpen(false);
+      navigate(`/operations/${operation.id}`);
+    } catch (error) {
+      console.error('Failed to create operation:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create operation",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,68 +66,63 @@ export function CreateOperationForm() {
         <DialogHeader>
           <DialogTitle>Create New Operation</DialogTitle>
           <DialogDescription>
-            Set the objective and scope for your new operation.
+            Enter the details for your new operation.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label
-              htmlFor="objective"
-              className="block text-sm font-medium leading-6 text-foreground"
-            >
-              Objective
+            <label htmlFor="name" className="block text-sm font-medium">
+              Operation Name
             </label>
-            <Textarea
-              id="objective"
-              value={objective}
-              onChange={(e) => setObjective(e.target.value)}
-              placeholder="Enter the operation objective"
-              className="bg-secondary text-foreground placeholder:text-muted-foreground"
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter operation name"
+              className="bg-secondary"
             />
           </div>
+          
           <div className="space-y-2">
-            <label
-              htmlFor="scope"
-              className="block text-sm font-medium leading-6 text-foreground"
-            >
-              Scope
+            <label htmlFor="target" className="block text-sm font-medium">
+              Target
             </label>
-            {scope.map((item, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  value={item}
-                  onChange={(e) => {
-                    const newScope = [...scope];
-                    newScope[index] = e.target.value;
-                    setScope(newScope);
-                  }}
-                  className="bg-secondary text-foreground placeholder:text-muted-foreground"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setScope(scope.filter((_, i) => i !== index));
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button
-              variant="outline"
-              onClick={() => setScope([...scope, ''])}
-            >
-              Add Item
-            </Button>
+            <Input
+              id="target"
+              value={formData.target}
+              onChange={(e) => setFormData(prev => ({ ...prev, target: e.target.value }))}
+              placeholder="Enter target"
+              className="bg-secondary"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="startDate" className="block text-sm font-medium">
+              Start Date
+            </label>
+            <Input
+              id="startDate"
+              type="date"
+              value={formData.startDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+              className="bg-secondary"
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsOpen(false)}
+            disabled={loading}
+          >
             Cancel
           </Button>
-          <Button type="submit" onClick={handleSubmit}>
-            Create
+          <Button 
+            type="submit" 
+            onClick={handleSubmit}
+            disabled={loading || !formData.name || !formData.target}
+          >
+            {loading ? 'Creating...' : 'Create'}
           </Button>
         </DialogFooter>
       </DialogContent>
