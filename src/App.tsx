@@ -95,6 +95,12 @@ function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/operations/:id" element={
+            <ProtectedRoute>
+              <OperationDetails />
+            </ProtectedRoute>
+          } />
+
           <Route 
             path="/" 
             element={
@@ -108,6 +114,8 @@ function App() {
             } 
           />
 
+          <Route path="/auth-callback" element={<AuthCallback />} />
+
           <Route 
             path="*" 
             element={
@@ -120,8 +128,6 @@ function App() {
               )
             } 
           />
-
-          <Route path="/auth-callback" element={<AuthCallback />} />
         </Routes>
       </div>
     </ThemeProvider>

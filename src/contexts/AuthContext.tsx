@@ -43,6 +43,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [token]);
 
+  useEffect(() => {
+    const validateToken = async () => {
+      if (!token) return;
+      
+      try {
+        // Verify token is still valid by calling /me endpoint
+        const response = await authApi.getCurrentUser();
+        setUser(response);
+      } catch (error) {
+        // If token is invalid, log out
+        console.error('Token validation failed:', error);
+        logout();
+      }
+    };
+
+    validateToken();
+  }, [token]);
+
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);

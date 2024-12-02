@@ -261,7 +261,24 @@ router.get('/setup-required', async (req, res) => {
   }
 });
 
-// Login
+// Update the JWT signing in login, register, and Azure callback routes
+const generateToken = (user) => jwt.sign(
+  { 
+    id: user.id,
+    username: user.username,
+    isAdmin: user.is_admin,
+    tokenVersion: user.token_version || 1,
+    tokenType: 'auth'
+  },
+  process.env.JWT_SECRET || 'your-secret-key',
+  { 
+    expiresIn: '24h',
+    audience: 'redops-api',
+    issuer: 'redops-auth'
+  }
+);
+
+// Update the login route's token generation
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -287,16 +304,7 @@ router.post('/login', async (req, res) => {
       [user.id]
     );
 
-    const token = jwt.sign(
-      { 
-        id: user.id, 
-        username: user.username,
-        tokenVersion: user.token_version,
-        tokenType: 'auth'
-      },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
+    const token = generateToken(user);
 
     // Note: is_admin is sent in response but not stored in JWT
     res.json({ 

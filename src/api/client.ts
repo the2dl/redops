@@ -37,33 +37,36 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return data;
 }
 
-export async function apiRequest<T>(
+export const apiRequest = async <T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<T> {
-  const headers = new Headers({
-    'Content-Type': 'application/json',
-  });
-
-  if (options.headers) {
-    Object.entries(options.headers).forEach(([key, value]) => {
-      headers.set(key, value as string);
-    });
-  }
-
+): Promise<T> => {
   const token = localStorage.getItem('token');
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
+  
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
-    credentials: 'include',
   });
 
-  return handleResponse<T>(response);
-}
+  if (!response.ok) {
+    if (response.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      throw new Error('Session expired');
+    }
+    throw new Error(await response.text());
+  }
+
+  return response.json();
+};
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
