@@ -38,6 +38,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from '@/contexts/AuthContext';
 
 const statusColors = {
   ongoing: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
@@ -48,6 +49,7 @@ const statusColors = {
 
 export function OperationDetails() {
   const { id } = useParams();
+  const { user } = useAuth();
   const operation = operations.find((op) => op.id === id);
   const [closureNotes, setClosureNotes] = useState("");
   const [isClosing, setIsClosing] = useState(false);
