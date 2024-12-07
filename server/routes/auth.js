@@ -228,6 +228,7 @@ router.post('/setup', async (req, res) => {
             { 
               id: req.user.id,
               username: req.user.username,
+              isAdmin: req.user.is_admin,
               tokenVersion: req.user.token_version,
               tokenType: 'auth'
             },
@@ -430,14 +431,9 @@ router.get('/me', async (req, res) => {
       return res.status(403).json({ error: 'Account is inactive' });
     }
 
-    res.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        isAdmin: user.is_admin
-      }
-    });
+    res.json(
+      user
+    );
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
       return res.status(401).json({ error: 'Invalid token' });
