@@ -100,7 +100,17 @@ const checkAdmin = async (req, res, next) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/operations', passport.authenticate('jwt', { session: false }), checkAdmin, operationsRoutes);
+app.use('/api/operations', passport.authenticate('jwt', { session: false }), checkAdmin, async (req, res, next) => {
+  try {
+    const result = await pool.query('SELECT *, to_char(start_date, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as start_date FROM operations');
+    res.json(result.rows.map(operation => ({
+      ...operation,
+      startDate: operation.start_date
+    })));
+  } catch (err) {
+    next(err);
+  }
+});
 app.use('/api/commands', passport.authenticate('jwt', { session: false }), checkAdmin, commandsRoutes);
 
 // Health check route

@@ -168,7 +168,9 @@ export function OperationsList({ title }: OperationsListProps) {
                     {op.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{new Date(op.startDate).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  {format(new Date(op.startDate), 'PPP')}
+                </TableCell>
                 <TableCell>{op.findings}</TableCell>
                 <TableCell className="text-right">
                   {op.successRate ? `${op.successRate}%` : '-'}
